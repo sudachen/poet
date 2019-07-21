@@ -20,6 +20,7 @@ type serverConfig struct {
 	exe                  string
 	NodeAddress          string
 	InitialRoundDuration string
+	TimeParam            string
 }
 
 // DefaultConfig returns a newConfig with all default values.
@@ -56,6 +57,9 @@ func (cfg *serverConfig) genArgs() []string {
 	}
 	if cfg.InitialRoundDuration != "" {
 		args = append(args, fmt.Sprintf("--initialduration=%v", cfg.InitialRoundDuration))
+	}
+	if cfg.TimeParam != "" {
+		args = append(args, fmt.Sprintf("--n=%v", cfg.TimeParam))
 	}
 
 	return args
