@@ -30,6 +30,7 @@ const (
 	defaultN                    = 15
 	defaultInitialRoundDuration = 35 * time.Second
 	defaultExecuteEmpty         = true
+	defaultNodeAddress          = "localhost:9091"
 )
 
 var (
@@ -96,6 +97,7 @@ func loadConfig() (*config, error) {
 		CoreService: &coreServiceConfig{
 			N: defaultN,
 		},
+		NodeAddress: defaultNodeAddress,
 	}
 
 	// Pre-parse the command line options to pick up an alternative config

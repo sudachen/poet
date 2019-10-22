@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/nullstyle/go-xdr/xdr3"
-	"github.com/spacemeshos/poet/broadcaster"
 	"github.com/spacemeshos/poet/shared"
 	"github.com/spacemeshos/poet/signal"
 	"github.com/spacemeshos/smutil/log"
@@ -14,7 +13,6 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
-	"sync/atomic"
 	"time"
 )
 
@@ -41,7 +39,6 @@ type Service struct {
 	executingRounds map[string]*round
 	nextRoundId     int
 
-	started int32
 	PubKey  ed25519.PublicKey
 	privKey ed25519.PrivateKey
 
@@ -88,7 +85,7 @@ type PoetProofMessage struct {
 	Signature     []byte
 }
 
-func NewService(sig *signal.Signal, cfg *Config, datadir string, nodeAddress string) (*Service, error) {
+func NewService(sig *signal.Signal, cfg *Config, datadir string) (*Service, error) {
 	s := new(Service)
 	s.cfg = cfg
 	s.datadir = datadir
@@ -109,14 +106,6 @@ func NewService(sig *signal.Signal, cfg *Config, datadir string, nodeAddress str
 	s.nextRoundId = state.NextRoundId
 
 	log.Info("Service public key: %x", s.PubKey)
-
-	if nodeAddress != "" {
-		if err := s.Start(nodeAddress); err != nil {
-			return nil, fmt.Errorf("failed to start service: %v", err)
-		}
-	} else {
-		log.Info("Service not starting, waiting for start request")
-	}
 
 	return s, nil
 }
@@ -154,28 +143,12 @@ func (s *Service) state() (*serviceState, error) {
 	return v, nil
 }
 
-func (s *Service) Start(nodeAddress string) error {
-	b, err := broadcaster.New(nodeAddress)
-	if err != nil {
-		return fmt.Errorf("failed not connect to gateway node (addr: %v): %v", nodeAddress, err)
-	}
-
-	if err := s.start(b); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (s *Service) start(broadcaster Broadcaster) error {
-	if !atomic.CompareAndSwapInt32(&s.started, 0, 1) {
-		return errors.New("already opened")
-	}
-
+func (s *Service) Start(broadcaster Broadcaster) {
 	if s.cfg.NoRecovery {
 		log.Info("Recovery is disabled")
 	} else if err := s.Recover(broadcaster); err != nil {
-		return fmt.Errorf("failed to recover: %v", err)
+		log.Error("Failed to recover: %v", err)
+		return
 	}
 
 	s.openRound = s.newRound()
@@ -214,8 +187,6 @@ func (s *Service) start(broadcaster Broadcaster) error {
 			}()
 		}
 	}()
-
-	return nil
 }
 
 func (s *Service) Recover(broadcaster Broadcaster) error {
@@ -292,10 +263,6 @@ func (s *Service) executeRound(r *round) error {
 }
 
 func (s *Service) Submit(data []byte) (*round, error) {
-	if atomic.LoadInt32(&s.started) != 1 {
-		return nil, errors.New("service not started")
-	}
-
 	r := s.openRound
 	err := r.submit(data)
 	if err != nil {
