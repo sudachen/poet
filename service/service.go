@@ -1,10 +1,8 @@
 package service
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
-	"github.com/nullstyle/go-xdr/xdr3"
 	"github.com/spacemeshos/poet/broadcaster"
 	"github.com/spacemeshos/poet/shared"
 	"github.com/spacemeshos/poet/signal"
@@ -442,10 +440,5 @@ func serializeProofMsg(servicePubKey []byte, roundId string, execution *executio
 		Signature:     nil,
 	}
 
-	var dataBuf bytes.Buffer
-	if _, err := xdr.Marshal(&dataBuf, proofMessage); err != nil {
-		return nil, fmt.Errorf("failed to marshal proof message for round %v: %v", roundId, err)
-	}
-
-	return dataBuf.Bytes(), nil
+	return InterfaceToBytes(proofMessage)
 }

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"crypto/rand"
 	"fmt"
-	"github.com/nullstyle/go-xdr/xdr3"
 	"github.com/spacemeshos/merkle-tree"
 	"github.com/spacemeshos/poet/prover"
 	"github.com/spacemeshos/poet/signal"
@@ -168,7 +167,8 @@ func TestService_Recovery(t *testing.T) {
 		case <-time.After(10 * time.Second):
 			req.Fail("proof message wasn't sent")
 		case msg := <-broadcaster.receivedMessages:
-			_, err := xdr.Unmarshal(bytes.NewReader(msg), &proofMsg)
+
+			err := BytesToInterface(msg, &proofMsg)
 			req.NoError(err)
 		}
 
@@ -274,7 +274,7 @@ func TestNewService(t *testing.T) {
 	select {
 	case msg := <-proofBroadcaster.receivedMessages:
 		poetProof := PoetProofMessage{}
-		_, err := xdr.Unmarshal(bytes.NewReader(msg), &poetProof)
+		err := BytesToInterface(msg, &poetProof)
 		req.NoError(err)
 	case <-time.After(100 * time.Millisecond):
 		req.Fail("proof message wasn't sent")

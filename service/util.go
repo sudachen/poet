@@ -2,21 +2,34 @@ package service
 
 import (
 	"bytes"
+	"encoding/gob"
 	"fmt"
-	"github.com/nullstyle/go-xdr/xdr3"
 	"github.com/spacemeshos/poet/shared"
 	"io/ioutil"
 	"os"
 )
 
-func persist(filename string, v interface{}) error {
+// ⚠️ Pass the interface by reference
+func BytesToInterface(buf []byte, i interface{}) error {
+	dec := gob.NewDecoder(bytes.NewReader(buf)) // Will read from network.
+	return dec.Decode(i)
+}
+
+// ⚠️ Pass the interface by reference
+func InterfaceToBytes(i interface{}) ([]byte, error) {
 	var w bytes.Buffer
-	_, err := xdr.Marshal(&w, v)
+	enc := gob.NewEncoder(&w)
+	err := enc.Encode(i)
+	return w.Bytes(), err
+}
+
+func persist(filename string, v interface{}) error {
+	w, err := InterfaceToBytes(v)
 	if err != nil {
 		return fmt.Errorf("serialization failure: %v", err)
 	}
 
-	err = ioutil.WriteFile(filename, w.Bytes(), shared.OwnerReadWrite)
+	err = ioutil.WriteFile(filename, w, shared.OwnerReadWrite)
 	if err != nil {
 		return fmt.Errorf("write to disk failure: %v", err)
 	}
@@ -35,7 +48,7 @@ func load(filename string, v interface{}) error {
 		return fmt.Errorf("failed to read file: %v", err)
 	}
 
-	_, err = xdr.Unmarshal(bytes.NewReader(data), v)
+	err = BytesToInterface(data, v)
 	if err != nil {
 		return fmt.Errorf("failed to deserialize: %v", err)
 	}
