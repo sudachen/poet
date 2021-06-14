@@ -13,7 +13,7 @@ import (
 const (
 	// T is the security param which determines the number of leaves
 	// to be included in a non-interactive proof.
-	T uint8 = 150
+	T uint8 = 32 //150
 
 	// OwnerReadWrite is a standard owner read / write file permission.
 	OwnerReadWrite = os.FileMode(0600)
